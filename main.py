@@ -16,9 +16,9 @@ from dataloader import get_dataloader
 from utils import load_obj, setup_seed,natural_key, load_config
 from benchmark_utils import to_tsfm, to_o3d_pcd, get_blue, get_yellow, to_tensor
 from omegaconf import OmegaConf
+from registrations import REGISTRATIONS
 
 import shutil
-
 
 def draw_registration_result(src_raw, tgt_raw, tsfm):
     ########################################
@@ -49,7 +49,7 @@ def draw_registration_result(src_raw, tgt_raw, tsfm):
     vis1.destroy_window()
 
 
-def main(demo_loader):
+def main(demo_loader, method="none"):
     for inputs in demo_loader:
         pcd = inputs['points']
         len_src = inputs['stack_lengths'][0]
@@ -58,15 +58,23 @@ def main(demo_loader):
         src_pcd, tgt_pcd = pcd[:len_src], pcd[len_src:]
 
         tsfm = to_tsfm(rot, trans)
+        tsfm = REGISTRATIONS[method](src_pcd, tgt_pcd)
         draw_registration_result(src_pcd, tgt_pcd, tsfm)
 
+'''
+python main.py --method ransac
+python main.py --method icp_point2point
+python main.py --method icp_point2plane
+python main.py --method none
+'''
 
 if __name__ == '__main__':
     # load configs
     parser = argparse.ArgumentParser()
-    parser.add_argument('config', type=str, help= 'Path to the config file.')
+    parser.add_argument('--method', type=str, help='ransac / icp_point2point / icp_point2plane / none')
+
     args = parser.parse_args()
-    config = load_config(args.config)
+    config = load_config('./configs/train/indoor.yaml')
     config = edict(config)   # 字典
 
     # create dataset and dataloader
@@ -80,4 +88,4 @@ if __name__ == '__main__':
     )
 
     # do pose estimation
-    main(train_loader)
+    main(train_loader, method=args.method)
