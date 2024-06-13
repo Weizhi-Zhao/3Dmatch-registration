@@ -1,0 +1,4 @@
+data_root: 'data/plane'
+position: 'plane_all'
+overlap_radius: 0.0375
+num_workers: 1

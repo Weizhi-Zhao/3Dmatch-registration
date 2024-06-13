@@ -57,11 +57,21 @@ def load_config(path):
     with open(path,'r') as f:
         cfg = yaml.safe_load(f)
     
-    config = dict()
-    for key, value in cfg.items():
-        for k,v in value.items():
-            config[k] = v
+    # config = dict()
+    # for key, value in cfg.items():
+    #     for k,v in value.items():
+    #         config[k] = v
 
+    if not isinstance(cfg,dict):
+        raise ValueError(f"Config file {path} does not contain a valid dictionary")
+    
+    config = {}
+    for key, value in cfg.items():
+        if isinstance(value,dict):
+            for k, v in value.items():
+                config[k] =v
+        else:
+            config[key] = value
     return config
 
 
