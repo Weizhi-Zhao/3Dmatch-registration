@@ -5,6 +5,14 @@ from benchmark_utils import to_o3d_pcd
 
 
 def ransac_registration(src_pcd, tgt_pcd, voxel_size=0.05):
+    """
+    功能: 使用RANSAC算法和FPFH特征进行点云的全局配准。
+    输入参数:
+        src_pcd: 源点云数据。
+        tgt_pcd: 目标点云数据。
+        voxel_size: 体素大小，用于估计法线和计算FPFH特征。
+    返回值: 最佳变换矩阵，将源点云对齐到目标点云。
+    """
     src_pcd = to_o3d_pcd(src_pcd)
     tgt_pcd = to_o3d_pcd(tgt_pcd)
     # 估计法线
@@ -35,6 +43,15 @@ def ransac_registration(src_pcd, tgt_pcd, voxel_size=0.05):
     return ransac_result.transformation
 
 def icp_registraion_point2point(source, target, threshold=0.02, trans_init: Optional[np.ndarray]=None):
+    """
+    功能: 使用点对点ICP算法进行点云的精细配准。
+    输入参数:
+        source: 源点云数据。
+        target: 目标点云数据。
+        threshold: 最大对应点对距离阈值，用于配准。
+        trans_init: 初始变换矩阵，默认为单位矩阵。
+    返回值: 最佳变换矩阵，将源点云对齐到目标点云。
+    """
     source = to_o3d_pcd(source)
     target = to_o3d_pcd(target)
     if trans_init is None:
@@ -47,6 +64,15 @@ def icp_registraion_point2point(source, target, threshold=0.02, trans_init: Opti
 
 
 def icp_registraion_point2plane(source, target, threshold=0.02, trans_init: Optional[np.ndarray]=None):
+    """
+    功能: 使用点到平面ICP算法进行点云的精细配准。
+    输入参数:
+        source: 源点云数据。
+        target: 目标点云数据，需要预先估计法线。
+        threshold: 最大对应点对距离阈值，用于配准。
+        trans_init: 初始变换矩阵，默认为单位矩阵。
+    返回值: 最佳变换矩阵，将源点云对齐到目标点云。
+    """
     source = to_o3d_pcd(source)
     target = to_o3d_pcd(target)
     target.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))

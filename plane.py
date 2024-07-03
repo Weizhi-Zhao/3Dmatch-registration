@@ -6,7 +6,19 @@ import os
 from benchmark_utils import to_o3d_pcd, to_tsfm, get_correspondences
 
 class PlaneDataset(Dataset):
+    """
+    功能: 为平面数据集提供一个PyTorch Dataset接口，用于加载和处理点云数据及其相关的变换矩阵。
+    输入参数:
+        config: 配置对象，包含数据集的配置信息，如数据根目录、位置、重叠半径等。
+    返回值: 无。
+    """
     def __init__(self, config):
+        """
+        功能: 初始化PlaneDataset对象，设置数据目录和加载文件列表。
+        输入参数:
+            config: 配置对象，包含数据集的配置信息。
+        返回值: 无。
+        """
         self.data_root = os.path.join(config.data_root, config.position)
         self.data_dir = os.path.join(self.data_root, 'data')
         self.rt_dir = os.path.join(self.data_root, 'RT')
@@ -16,9 +28,25 @@ class PlaneDataset(Dataset):
         self.position = config.position
 
     def __len__(self):
+        """
+        功能: 返回数据集中的样本数量。
+        输入参数: 无。
+        返回值: 数据集中的样本数量。
+        """
         return len(self.files)
 
     def __getitem__(self, idx):
+        """
+        功能: 根据索引idx获取数据集中的一个样本，包括源点云、目标点云、旋转矩阵、平移向量和对应点。
+        输入参数:
+            idx: 请求的样本索引。
+        返回值: 一个字典，包含以下键值对：
+            'src': 源点云数据。
+            'tgt': 目标点云数据列表。
+            'rot': 旋转矩阵列表。
+            'trans': 平移向量列表。
+            'correspondences': 对应点列表。
+        """
         src_file = self.files[idx]
         src_pcd = pd.read_csv(os.path.join(self.data_dir, src_file)).values
         src_pcd = torch.tensor(src_pcd, dtype=torch.float64)
