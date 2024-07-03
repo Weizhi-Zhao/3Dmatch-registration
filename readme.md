@@ -41,5 +41,9 @@ python main.py --method ransac --dataset plane
 
     ​	`/nose`，`/body`，`/tail`分别存储机首机身机尾，每部分十片点云。
 
+3. 匹配任务
+   
+       比如说nose文件夹里面有十片点云，其中部分有重叠，比如说编号1和编号2的点云数据，这些有重叠的就会有txt存储变换矩阵的ground truth，要将这些有重叠的分别配准，然后去和ground_truth相比较。所以配准应当是当前点云与其他所有编号的点云进行配准，如1和2-10进行配准。
+
 
 
