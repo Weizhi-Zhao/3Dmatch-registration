@@ -13,19 +13,21 @@ def ransac_registration(src_pcd, tgt_pcd, voxel_size=0.05):
         voxel_size: 体素大小，用于估计法线和计算FPFH特征。
     返回值: 最佳变换矩阵，将源点云对齐到目标点云。
     """
+    # 将输入的点云数据转换为Open3D点云格式
     src_pcd = to_o3d_pcd(src_pcd)
     tgt_pcd = to_o3d_pcd(tgt_pcd)
-    # 估计法线
+    
+    # 估计源和目标点云的法线
     src_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
     tgt_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
     
-    # 计算FPFH特征
+    # 计算源和目标点云的FPFH特征
     src_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         src_pcd, o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5, max_nn=100))
     tgt_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         tgt_pcd, o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5, max_nn=100))
     
-    # 使用RANSAC算法进行全局配准
+    # 使用RANSAC算法和FPFH特征进行全局配准
     distance_threshold = voxel_size * 1.5
     ransac_result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
         source=src_pcd, 
@@ -52,10 +54,15 @@ def icp_registraion_point2point(source, target, threshold=0.02, trans_init: Opti
         trans_init: 初始变换矩阵，默认为单位矩阵。
     返回值: 最佳变换矩阵，将源点云对齐到目标点云。
     """
+    # 将输入的点云数据转换为Open3D点云格式
     source = to_o3d_pcd(source)
     target = to_o3d_pcd(target)
+    
+    # 如果未提供初始变换矩阵，则使用单位矩阵
     if trans_init is None:
         trans_init = np.eye(4)
+    
+    # 使用点对点ICP算法进行精细配准
     reg_p2p = o3d.pipelines.registration.registration_icp(
         source, target, threshold, trans_init,
         o3d.pipelines.registration.TransformationEstimationPointToPoint())
@@ -73,9 +80,13 @@ def icp_registraion_point2plane(source, target, threshold=0.02, trans_init: Opti
         trans_init: 初始变换矩阵，默认为单位矩阵。
     返回值: 最佳变换矩阵，将源点云对齐到目标点云。
     """
+    # 将输入的点云数据转换为Open3D点云格式
     source = to_o3d_pcd(source)
     target = to_o3d_pcd(target)
+
+    # 为目标点云估计法线
     target.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    # 如果未提供初始变换矩阵，则使用单位矩阵
     if trans_init is None:
         # trans_init = np.asarray(
         #     [
@@ -86,6 +97,7 @@ def icp_registraion_point2plane(source, target, threshold=0.02, trans_init: Opti
         #     ]
         # )
         trans_init = np.eye(4)
+    # 使用点到平面ICP算法进行精细配准
     reg_p2p = o3d.pipelines.registration.registration_icp(
         source, target, threshold, trans_init,
         o3d.pipelines.registration.TransformationEstimationPointToPlane())
@@ -97,5 +109,5 @@ REGISTRATIONS = {
     "ransac": ransac_registration,
     "icp_point2point": icp_registraion_point2point,
     "icp_point2plane": icp_registraion_point2plane,
-    "none": lambda s, t: np.eye(4),
+    "none": lambda s, t: np.eye(4), # 不进行配准，直接返回单位矩阵
 }

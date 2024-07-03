@@ -57,27 +57,31 @@ class IndoorDataset(Dataset):
         返回值: 
             包含源点云、目标点云、旋转矩阵、平移向量和对应点的元组。
         """
-        # get transformation
+        # get transformation，获取样本的旋转矩阵和平移向量
         rot=self.infos['rot'][item]
         trans=self.infos['trans'][item]
 
-        # get pointcloud
+        # get pointcloud，根据索引获取源点云和目标点云的文件路径，并加载它们
         src_path=os.path.join(self.base_dir,self.infos['src'][item])
         tgt_path=os.path.join(self.base_dir,self.infos['tgt'][item])
         src_pcd = torch.load(src_path)
         tgt_pcd = torch.load(tgt_path)
 
+        # 如果平移向量是一维的，将其转换为二维形式
         if(trans.ndim==1):
             trans=trans[:,None]
 
-        # get correspondence at fine level
+        # get correspondence at fine level，使用旋转矩阵和平移向量生成变换矩阵，并获取源点云和目标点云之间的对应点
         tsfm = to_tsfm(rot, trans)
         correspondences = get_correspondences(to_o3d_pcd(src_pcd), to_o3d_pcd(tgt_pcd), tsfm,self.overlap_radius)
+
+        # 将旋转矩阵和平移向量转换为torch.Tensor类型
         rot = rot.astype(np.float32)
         rot = torch.from_numpy(rot)
         trans = trans.astype(np.float32)
         trans = torch.from_numpy(trans)
 
+        # 返回源点云、目标点云、旋转矩阵、平移向量和对应点
         return (
             torch.from_numpy(src_pcd),
             torch.from_numpy(tgt_pcd),

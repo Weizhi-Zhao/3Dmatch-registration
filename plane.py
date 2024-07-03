@@ -47,37 +47,46 @@ class PlaneDataset(Dataset):
             'trans': 平移向量列表。
             'correspondences': 对应点列表。
         """
+        # 读取源点云文件并转换为tensor
         src_file = self.files[idx]
         src_pcd = pd.read_csv(os.path.join(self.data_dir, src_file)).values
         src_pcd = torch.tensor(src_pcd, dtype=torch.float64)
 
+        # 初始化目标点云、旋转矩阵、平移向量和对应点列表
         tgt_pcds = []
         rots = []
         transes = []
         correspondences = []
 
+        # 遍历所有文件，寻找与当前索引不同的目标点云
         for i in range(len(self.files)):
             if i != idx:
                 tgt_file = self.files[i]
+                # 根据位置信息构造RT文件名
                 if self.position == 'plane_all':
                     rt_file = f'plane{os.path.splitext(src_file)[0]}to{os.path.splitext(tgt_file)[0]}.txt'
                 else:
                     rt_file = f'{self.position}{os.path.splitext(src_file)[0]}to{os.path.splitext(tgt_file)[0]}.txt'
                     
+                # 如果RT文件存在，则读取目标点云和RT矩阵
                 if os.path.exists(os.path.join(self.rt_dir, rt_file)):
                     tgt_pcd = pd.read_csv(os.path.join(self.data_dir, tgt_file)).values
                     rt = np.loadtxt(os.path.join(self.rt_dir, rt_file))
 
+                    # 提取旋转矩阵和平移向量
                     rot = rt[:3, :3]
                     trans = rt[:3, 3]
 
+                    # 将目标点云、旋转矩阵和平移向量转换为tensor
                     tgt_pcd = torch.tensor(tgt_pcd, dtype=torch.float64)
                     rot = torch.tensor(rot, dtype=torch.float32)
                     trans = torch.tensor(trans, dtype=torch.float32)
 
+                    # 将处理后的数据添加到相应的列表中
                     tgt_pcds.append(tgt_pcd)
                     rots.append(rot)
                     transes.append(trans)
+                    # 计算并添加对应点
                     correspondences.append(get_correspondences(to_o3d_pcd(src_pcd), to_o3d_pcd(tgt_pcd), rt, self.overlap_radius))
 
         # stack_lengths = [len(src_pcd), len(tgt_pcds[0])]
